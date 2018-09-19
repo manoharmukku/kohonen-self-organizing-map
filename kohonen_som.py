@@ -16,7 +16,7 @@ def usage():
 def main(argv):
     # Get the command line arguments
     try:
-        opts, args = getopt.getopt(argv, "hdf:s:l:r:", ["help", "defaults", "file=", "shape=", "lr=", "rseed="])
+        opts, args = getopt.getopt(argv, "hdf:s:l:r:i:", ["help", "defaults", "file=", "shape=", "lr=", "rseed=", "iterations="])
     except getopt.GetoptError:
         sys.exit(2)
 
@@ -25,6 +25,7 @@ def main(argv):
     shape = None # Required
     lr = None # Required
     rseed = "42" # Optional
+    max_iter = "1000000"
     defaults = False
     flag = 0
 
@@ -47,6 +48,8 @@ def main(argv):
             flag |= 4 # Set 3rd bit from last to 1
         elif (opt in ["-r", "--rseed"]):
             rseed = arg
+        elif (opt in ["-i", "--iterations"]):
+            max_iter = arg
 
     # Sanity check the command line arguments
 
@@ -82,6 +85,14 @@ def main(argv):
         rseed = int(rseed)
     except ValueError:
         sys.exit ("Oops! Random seed should be an integer value")
+
+    # Sanity check and extract max_iterations value
+    try:
+        max_iter = int(max_iter)
+    except ValueError:
+        sys.exit ("Oops! Maximum iterations value should be an integer")
+    if (max_iter <= 0):
+        sys.exit ("Oops! Maximum iterations value should be positive")
 
     # Sanity check and read the given data file into a dataframe
     df = None
