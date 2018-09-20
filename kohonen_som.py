@@ -89,7 +89,7 @@ def parse_shape(shape):
     return [int(n) for n in shape.split(",")]
 
 def usage():
-    print ("usage: kohonen_som.py [-h|--help] [-d|--defaults] -f|--file ... -s|--shape ... -l|--lr ... [-r|--rseed ...] [-i|--iterations ...]")
+    print ("usage: kohonen_som.py [-h|--help] [-d|--defaults] [-f|--file] ... -s|--shape ... -l|--lr ... [-r|--rseed ...] [-i|--iterations ...]")
     return
 
 def main(argv):
@@ -100,7 +100,7 @@ def main(argv):
         sys.exit(2)
 
     # Defaults
-    data_file = "load" # Required
+    data_file = None # Optional
     shape = None # Required
     lr = None # Required
     rseed = "42" # Optional
@@ -124,7 +124,6 @@ def main(argv):
             flag |= 2 # Set 2nd bit from last to 1
         elif (opt in ["-f", "--file"]):
             data_file = arg
-            flag |= 4 # Set 3rd bit from last to 1
         elif (opt in ["-r", "--rseed"]):
             rseed = arg
         elif (opt in ["-i", "--iterations"]):
@@ -138,8 +137,6 @@ def main(argv):
 
     # If defaults value is set, assign defaults to unspecified arguments
     if (defaults == True):
-        if (data_file == None):
-            data_file = "data.csv"
         if (shape == None):
             shape = "10,10"
         if (lr == None):
@@ -178,7 +175,7 @@ def main(argv):
 
     # Sanity check and read the given data file or read data from sklearn
     data = None
-    if (data_file != "load"):
+    if (data_file != None):
         df = None
         with open(data_file) as file:
             df = pd.read_csv(file)
