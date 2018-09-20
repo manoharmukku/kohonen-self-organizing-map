@@ -49,9 +49,9 @@ def kohonen_som(data, shape, lr, max_iter, rseed):
 
     # Iterate until convergence
     for t in range(max_iter):
-        print ("\rIteration {}...".format(t))
+        sys.stdout.write ("\rIteration {}...".format(t))
         sys.stdout.flush()
-        
+
         # Choose a random sample from the data
         x = data[np.random.randint(low=0, high=m, size=1), :].reshape(n, 1)
 
@@ -188,14 +188,17 @@ def main(argv):
     digits = load_digits()
     data = digits.data
 
-    print ("Training...")
+    print ("Training")
+    print ("--------")
     # Perform kohonen iterations until convergence and find the final weight matrix
     weights, mapping_count = kohonen_som(data, shape, lr, max_iter, rseed)
+    print ("\nDone training...")
 
     print ("Plotting the heatmap...")
     # Print the heatmap of the mapping counts
     plt.imshow(mapping_count.reshape((shape[0], shape[1])), cmap='hot', interpolation='nearest')
     plt.show()
+    print ("Done plotting...")
 
 if __name__ == "__main__":
     main(sys.argv[1:])
