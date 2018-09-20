@@ -5,7 +5,74 @@
 
 import getopt
 import sys
-import pandas
+import pandas as pd
+import numpy as np
+import math
+
+def initialize_weights(data, shape):
+    # Initialize weight vectors from the input vectors
+    rows = data.shape[0]
+    n = shape[0] * shape[1]
+
+    rand_rows = np.random.randint(rows, size=n)
+
+    return data[rand_rows, :].T
+
+def dist(x1, y1, x2, y2):
+    return math.sqrt((x1-x2)**2 + (y1-y2)**2)
+
+def is_within_radius(x1, y1, x2, y2, rad):
+    if (dist(x1, y1, x2, y2) <= rad):
+        return True
+    return False
+
+def kohonen(df, shape, lr, max_iter, rseed):
+    # Convert the dataframe to numpy array
+    data = df.values()
+
+    m = data.shape[0]
+    n = data.shape[1]
+
+    rows = shape[0]
+    cols = shape[1]
+
+    # Initialize the weight matrix
+    weights = initialize_weights(data, shape)
+
+    # Initialize parameters
+    t2 = 1000.0
+    width = math.sqrt(shape[0]**2 + shape[1]**2) / 2.0
+    t1 = 1000.0 / np.log(width)
+
+    # Iterate until convergence
+    for t in range(max_iter):
+        # Choose a random sample from the data
+        x = data[np.random.uniform(low=0, high=m, size=1), :].reshape(n, 1)
+
+        # Calculate outputs from weights, x
+        y = np.matmul(weights.T, x).T
+
+        # Find the coordinates of the winning neuron
+        winning = np.argmax(y)
+        win_x = winning / rows
+        win_y = winning % cols
+
+        # Update the width for this iteration
+        width = width * np.exp(-t / (1.0*t1))
+
+        # Calculate the neighborhood function
+        h = np.zeros([rows*cols, 1])
+        for j in range(rows*cols):
+            j_x = j / rows
+            j_y = j % cols
+            if (is_within_radius(j_x, j_y, win_x, win_y, width)):
+                h[j] = np.exp(-(dist(j_x, j_y, win_x, win_y)**2) / (2.0 * width**2))
+
+        # Update the learning rate for this iteration
+        lr = max(0.01, lr * np.exp(-t / (1.0 * t2)))
+
+        # Update the weights matrix
+        weights = weights + (lr * (x - weights) * h)
 
 def parse_shape(shape):
     return [int(n) for n in shape.split(",")]
@@ -25,7 +92,7 @@ def main(argv):
     shape = None # Required
     lr = None # Required
     rseed = "42" # Optional
-    max_iter = "1000000"
+    max_iter = None
     defaults = False
     flag = 0
 
@@ -88,7 +155,10 @@ def main(argv):
 
     # Sanity check and extract max_iterations value
     try:
-        max_iter = int(max_iter)
+        if (max_iter == None):
+            max_iter = int(1000 + 500 * shape[0] * shape[1])
+        else:
+            max_iter = int(max_iter)
     except ValueError:
         sys.exit ("Oops! Maximum iterations value should be an integer")
     if (max_iter <= 0):
