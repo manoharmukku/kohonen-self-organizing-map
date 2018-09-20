@@ -2,7 +2,7 @@
 
 ### Usage:
 ```
- $ python kohonen_som.py [-h|--help] [-d|--defaults] -f|--file ... -s|--shape ... -l|--lr ... [-r|--rseed ...] [-i|--iterations ...]
+ $ python kohonen_som.py [-h|--help] [-d|--defaults] [-f|--file ...] -s|--shape ... -l|--lr ... [-r|--rseed ...] [-i|--iterations ...]
 ```
 * -h or --help --> __Optional__ Display help information
 * -d or --defaults --> __Optional__ Use default values for unspecified arguments
@@ -10,7 +10,7 @@
 * -l or --lr --> __Required__ Initial learning rate
 * -r or --rseed --> __Optional__ Random seed value
 * -i or --iterations --> __Optional__ Maximum number of iterations
-* -f or --file --> __Required__ CSV data file to use for training
+* -f or --file --> __Optional__ CSV data file to use for training
 
 Note:
 * This code is written in Python3
