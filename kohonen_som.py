@@ -89,6 +89,7 @@ def parse_shape(shape):
     return [int(n) for n in shape.split(",")]
 
 def usage():
+    print ("usage: kohonen_som.py [-h|--help] [-d|--defaults] -f|--file ... -s|--shape ... -l|--lr ... [-r|--rseed ...] [-i|--iterations ...]")
     return
 
 def main(argv):
