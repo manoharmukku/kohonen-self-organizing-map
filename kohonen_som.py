@@ -8,15 +8,8 @@ import sys
 import pandas as pd
 import numpy as np
 import math
-
-def initialize_weights(data, shape):
-    # Initialize weight vectors from the input vectors
-    rows = data.shape[0]
-    n = shape[0] * shape[1]
-
-    rand_rows = np.random.randint(rows, size=n)
-
-    return data[rand_rows, :].T
+from sklearn.datasets import load_digits
+import matplotlib.pyplot as plt
 
 def dist(x1, y1, x2, y2):
     return math.sqrt((x1-x2)**2 + (y1-y2)**2)
@@ -26,10 +19,18 @@ def is_within_radius(x1, y1, x2, y2, rad):
         return True
     return False
 
-def kohonen(df, shape, lr, max_iter, rseed):
-    # Convert the dataframe to numpy array
-    data = df.values()
+def initialize_weights(data, shape):
+    # Initialize weight vectors from the input vectors
+    rows = data.shape[0]
+    n = shape[0] * shape[1]
 
+    rand_rows = np.random.randint(rows, size=n)
+
+    weights = data[rand_rows, :].T
+
+    return weights
+
+def kohonen_som(data, shape, lr, max_iter, rseed):
     m = data.shape[0]
     n = data.shape[1]
 
@@ -44,10 +45,15 @@ def kohonen(df, shape, lr, max_iter, rseed):
     width = math.sqrt(shape[0]**2 + shape[1]**2) / 2.0
     t1 = 1000.0 / np.log(width)
 
+    mapping_count = np.zeros([rows*cols, 1])
+
     # Iterate until convergence
     for t in range(max_iter):
+        print ("\rIteration {}...".format(t))
+        sys.stdout.flush()
+        
         # Choose a random sample from the data
-        x = data[np.random.uniform(low=0, high=m, size=1), :].reshape(n, 1)
+        x = data[np.random.randint(low=0, high=m, size=1), :].reshape(n, 1)
 
         # Calculate outputs from weights, x
         y = np.matmul(weights.T, x).T
@@ -57,8 +63,10 @@ def kohonen(df, shape, lr, max_iter, rseed):
         win_x = winning / rows
         win_y = winning % cols
 
+        mapping_count[winning] += 1
+
         # Update the width for this iteration
-        width = width * np.exp(-t / (1.0*t1))
+        width = max(0.5, width * math.exp(-t / (1.0*t1)))
 
         # Calculate the neighborhood function
         h = np.zeros([rows*cols, 1])
@@ -66,13 +74,16 @@ def kohonen(df, shape, lr, max_iter, rseed):
             j_x = j / rows
             j_y = j % cols
             if (is_within_radius(j_x, j_y, win_x, win_y, width)):
-                h[j] = np.exp(-(dist(j_x, j_y, win_x, win_y)**2) / (2.0 * width**2))
+                h[j] = math.exp(-(dist(j_x, j_y, win_x, win_y)**2) / (2.0 * width**2))
 
         # Update the learning rate for this iteration
-        lr = max(0.01, lr * np.exp(-t / (1.0 * t2)))
+        lr = max(0.01, lr * math.exp(-t / (1.0 * t2)))
 
         # Update the weights matrix
-        weights = weights + (lr * (x - weights) * h)
+        weights = weights + (lr * (x - weights) * (h.T))
+
+    # Return the final weights and mapping counts
+    return weights, mapping_count
 
 def parse_shape(shape):
     return [int(n) for n in shape.split(",")]
@@ -104,15 +115,15 @@ def main(argv):
         elif (opt in ["-d", "--defaults"]):
             defaults = True
             print ("Using default values for unspecified arguments")
-        elif (opt in ["-f", "--file"]):
-            data_file = arg
-            flag |= 1 # Set 1st bit from last to 1
         elif (opt in ["-s", "--shape"]):
             shape = arg
-            flag |= 2 # Set 2nd bit from last to 1
+            flag |= 1 # Set 1st bit from last to 1
         elif (opt in ["-l", "--lr"]):
             lr = arg
-            flag |= 4 # Set 3rd bit from last to 1
+            flag |= 2 # Set 2nd bit from last to 1
+        # elif (opt in ["-f", "--file"]):
+        #     data_file = arg
+        #     flag |= 4 # Set 3rd bit from last to 1
         elif (opt in ["-r", "--rseed"]):
             rseed = arg
         elif (opt in ["-i", "--iterations"]):
@@ -121,7 +132,7 @@ def main(argv):
     # Sanity check the command line arguments
 
     # Check if all the required are specified. If not, whether the default flag is set
-    if (defaults == False and flag != 7):
+    if (defaults == False and flag != 3):
         sys.exit ("Oops! Please specify all the required arguments, or use --defaults flag, for using the default values of unspecified arguments")
 
     # If defaults value is set, assign defaults to unspecified arguments
@@ -129,7 +140,7 @@ def main(argv):
         if (data_file == None):
             data_file = "data.csv"
         if (shape == None):
-            shape = "100,100"
+            shape = "10,10"
         if (lr == None):
             lr = "0.1"
 
@@ -165,9 +176,26 @@ def main(argv):
         sys.exit ("Oops! Maximum iterations value should be positive")
 
     # Sanity check and read the given data file into a dataframe
-    df = None
-    with open(data_file) as file:
-        df = pd.readcsv(file)
+    # df = None
+    # with open(data_file) as file:
+    #     df = pd.readcsv(file)
+
+    # # Convert the dataframe to numpy ndarray
+    # data = df.values()
+
+
+    # Load MNIST dataset from sklearn
+    digits = load_digits()
+    data = digits.data
+
+    print ("Training...")
+    # Perform kohonen iterations until convergence and find the final weight matrix
+    weights, mapping_count = kohonen_som(data, shape, lr, max_iter, rseed)
+
+    print ("Plotting the heatmap...")
+    # Print the heatmap of the mapping counts
+    plt.imshow(mapping_count.reshape((shape[0], shape[1])), cmap='hot', interpolation='nearest')
+    plt.show()
 
 if __name__ == "__main__":
     main(sys.argv[1:])
