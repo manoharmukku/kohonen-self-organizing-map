@@ -100,7 +100,7 @@ def main(argv):
         sys.exit(2)
 
     # Defaults
-    data_file = None # Required
+    data_file = "load" # Required
     shape = None # Required
     lr = None # Required
     rseed = "42" # Optional
@@ -122,9 +122,9 @@ def main(argv):
         elif (opt in ["-l", "--lr"]):
             lr = arg
             flag |= 2 # Set 2nd bit from last to 1
-        # elif (opt in ["-f", "--file"]):
-        #     data_file = arg
-        #     flag |= 4 # Set 3rd bit from last to 1
+        elif (opt in ["-f", "--file"]):
+            data_file = arg
+            flag |= 4 # Set 3rd bit from last to 1
         elif (opt in ["-r", "--rseed"]):
             rseed = arg
         elif (opt in ["-i", "--iterations"]):
@@ -176,18 +176,21 @@ def main(argv):
     if (max_iter <= 0):
         sys.exit ("Oops! Maximum iterations value should be positive")
 
-    # Sanity check and read the given data file into a dataframe
-    # df = None
-    # with open(data_file) as file:
-    #     df = pd.readcsv(file)
+    # Sanity check and read the given data file or read data from sklearn
+    data = None
+    if (data_file != "load"):
+        df = None
+        with open(data_file) as file:
+            df = pd.read_csv(file)
 
-    # # Convert the dataframe to numpy ndarray
-    # data = df.values()
-
-
-    # Load MNIST dataset from sklearn
-    digits = load_digits()
-    data = digits.data
+        # Convert the dataframe to numpy ndarray
+        data = df.values
+        data = data[:, 0:-1]
+        data = data.astype(float)
+    else:
+        # Load MNIST dataset from sklearn
+        digits = load_digits()
+        data = digits.data
 
     print ("Training")
     print ("--------")
